@@ -1,0 +1,555 @@
+library('TTR')
+library('forecast')
+library('zoo')
+library('dtw')
+library('party')
+library('wavelets')
+library('fpp')
+library('RWeka')
+library('partykit')
+
+install.packages('fpp')
+install.packages('ts')
+install.packages('dtw')
+install.packages('party')
+install.packages('wavelets')
+install.packages("TTR")
+install.packages("forecast")
+
+getwd()
+setwd(dir = 'C:/Users/UPD Engg NSTP/Dropbox/MyProjects/P Data Mining [Apr 21 2015]/Module 5/Lectures/Updated July 23 2017')
+
+
+
+####################################################
+#PRELIMINARIES
+
+a <- ts(1:20, frequency=12, start=c(2011,3))
+print(a)
+str(a)
+attributes(a)
+a
+
+?str
+?ts
+?TTR
+?print
+?str
+?attributes
+
+#SIMPLE MOVING AVERAGE
+library("TTR")
+library(forecast)
+births = read.csv("births.csv")
+birthsts = ts(births[,2], frequency=12, start=c(1946,1))
+birthstsSMA2 = SMA(birthsts,n=2)
+birthstsSMA5 = SMA(birthsts,n=5)
+birthstsSMA10 = SMA(birthsts,n=10)
+total = cbind(birthsts,birthstsSMA2,birthstsSMA5,birthstsSMA10)
+plot(total, plot.type="single",col = 1:ncol(total), lwd = c(2, 2, 2,2))
+legend("bottomright", colnames(total), col=1:ncol(total), lty = c(1, 1, 1,1), cex=.5, y.intersp = 1)
+
+#To forecast using the same model
+birthstsSMA2
+birthstsSMA2forecast = forecast(birthstsSMA2,h=5)
+plot(birthstsSMA2forecast)
+
+accuracy(birthstsSMA2, birthsts)
+
+?accuracy
+
+#WEIGHTED MOVING AVERAGE
+?WMA
+?EMA
+xx <- c(.1,.3,.5)
+birthstsWMA3 = WMA(birthsts, n=3, wts=xx)
+birthstsWMA3
+yy <- c(.1,.2,.3,.4)
+birthstsWMA4 = WMA(birthsts, n=4, wts=yy)
+birthstsWMA4
+total = cbind(birthsts,birthstsWMA3,birthstsWMA4)
+plot(total, plot.type="single",col = 1:ncol(total), lwd = c(2, 2, 2))
+legend("bottomright", colnames(total), col=1:ncol(total), lty = c(1, 1, 1), cex=.5, y.intersp = 1)
+
+?legend
+?forecast
+
+forecast()
+
+#SINGLE EXPONENTIAL SMOOTHING
+birthstssesa01 =  HoltWinters(birthsts,alpha=0.1, beta=FALSE, gamma=FALSE)
+birthstssesa02 =  HoltWinters(birthsts,alpha=0.2, beta=FALSE, gamma=FALSE)
+birthstssesa09 =  HoltWinters(birthsts,alpha=0.9, beta=FALSE, gamma=FALSE)
+total = cbind(birthsts,birthstssesa01$fitted[,1],birthstssesa02$fitted[,1],birthstssesa09$fitted[,1])
+plot(total, plot.type="single", col = 1:ncol(total), lwd = c(2, 2, 2,2))
+legend("bottomright", c("Original","0.1","0.2","0.9"), col=1:ncol(total), lty = c(1, 1), cex=.5, y.intersp = 1)
+
+birthstssesa01$seasonal
+
+birthstssesaauto =  HoltWinters(birthsts,beta=FALSE, gamma=FALSE)
+birthstssesaauto
+
+birthstssesa01$coefficients
+birthstssesa01$fitted[,1]
+
+birthstssesforecast01 = forecast.HoltWinters(birthstssesa01 , h=10)
+birthstssesforecast02 = forecast.HoltWinters(birthstssesa02 , h=10)
+birthstssesforecast09 = forecast.HoltWinters(birthstssesa09 , h=10)
+plot.forecast(birthstssesforecast01)
+plot.forecast(birthstssesforecast02)
+plot.forecast(birthstssesforecast09)
+
+birthstssesforecast01
+birthstssesforecast09
+
+
+accuracy(birthstssesforecast01)
+accuracy(birthstssesforecast02)
+accuracy(birthstssesforecast09)
+
+#Double Exponential Smoothing
+?HoltWinters
+str(birthstsdep)
+levels(birthstsdep)
+birthstsdep = HoltWinters(birthsts, gamma=FALSE)
+birthstsdep
+birthstsdep = HoltWinters(birthsts, alpha = 0.4, beta = 0.3, gamma=FALSE)
+birthstsdep
+total = cbind(birthsts,birthstsdep$fitted[,1])
+plot(total,plot.type="single", col = 1:ncol(total), lwd = c(2, 2))
+legend("bottomright", c("Original","Double Exp"), col=1:ncol(total), lty = c(1, 1), cex=.5,y.intersp = 1)
+birthstsdep
+
+birthstsdepforecast = forecast.HoltWinters(birthstsdep , h=8)
+plot.forecast(birthstsdepforecast)
+birthstsdepforecast
+
+
+#Triple Exponential Smoothing
+birthststes= HoltWinters(birthsts)
+total = cbind(birthsts,birthststes$fitted[,1])
+plot(total, plot.type="single", col = 1:ncol(total), lwd= c(2, 2))
+legend("bottomright", c("Original","TripleExp"), col=1:ncol(total), lty= c(1, 1), cex=.7, y.intersp= 1)
+birthststes
+birthstsdep
+birthststes= HoltWinters(birthsts)
+birthststesforecast = forecast.HoltWinters(birthststes , h=12)
+plot.forecast(birthststesforecast)
+
+accuracy(birthststesforecast)
+
+#DECOMPOSITION
+#Decompose Function
+birthstimeseriescomponents <- decompose(birthsts)
+plot(birthstimeseriescomponents)
+birthstimeseriescomponents
+birthstimeseriescomponents$random
+
+#Seasonal Adjustment
+birthstimeseriescomponents <- decompose(birthsts)
+birthstimeseriesseasonallyadjusted <- birthsts - birthstimeseriescomponents$seasonal
+birthstimeseriesseasonallyadjusted
+plot(birthstimeseriesseasonallyadjusted)
+
+
+#DECOMPOSITION using TSLM
+fit = tslm(birthsts~trend + season)
+summary(fit)
+plot(forecast(fit, h=20))
+
+
+#stl
+#Decomposition using STL Loess
+birthstsstl <- stl(birthsts, s.window="periodic")
+plot(birthstsstl)
+birthstsstl
+?stl
+
+
+
+
+###############################
+#CASE 2
+#R CODES 1: AIRLINES DECOMPOSITION
+airlines = read.csv("Airline.csv")
+airlinests = ts(airlines[,2], frequency=12, start=c(1949,1))
+airlinests
+airlinestsSMA2 = SMA(airlinests,n=2)
+airlinestsSMA10 = SMA(airlinests,n=10)
+airlinestsSMA20 = SMA(airlinests,n=20)
+total = cbind(airlinests,airlinestsSMA2,airlinestsSMA10,airlinestsSMA20)
+plot(total, plot.type="single", col = 1:ncol(total), lwd = c(2, 2, 2,2))
+legend("bottomright", colnames(total), col=1:ncol(total), lty = c(1, 1, 1,1), cex=.5, y.intersp = 1)
+
+airlinestscomponents = decompose(airlinests)
+airlinestscomponents
+airlinestscomponents$x
+plot(airlinestscomponents$seasonal)
+plot(airlinestscomponents$trend)
+plot(airlinestscomponents$random)
+
+?HoltWinters
+
+
+#Number 2
+chocolates = read.csv("Chocolates.csv")
+chocolatests = ts(chocolates[,2], frequency=12, start=c(1957,3))
+chocolates = read.csv("Chocolates.csv")
+chocolatests = ts(chocolates[,2], frequency=12, start=c(1957,3))
+chocolatestsSMA2 = SMA(chocolatests,n=2)
+chocolatestsSMA10 = SMA(chocolatests,n=10)
+chocolatestsSMA20 = SMA(chocolatests,n=20)
+total = cbind(chocolatests,chocolatestsSMA2,chocolatestsSMA10,chocolatestsSMA20)
+plot(total, plot.type="single", col = 1:ncol(total), lwd = c(2, 2, 2,2))
+legend("bottomright", colnames(total), col=1:ncol(total), lty = c(1, 1, 1,1), cex=.5, y.intersp = 1)
+
+#R CODES 1: SMA
+chocolates = read.csv("Chocolates.csv")
+chocolatests = ts(chocolates[,2], frequency=4, start=c(1957,3))
+chocolatests
+chocolatestsSMA2 = SMA(chocolatests,n=2)
+chocolatestsSMA10 = SMA(chocolatests,n=10)
+chocolatestsSMA20 = SMA(chocolatests,n=20)
+total = cbind(chocolatests,chocolatestsSMA2,chocolatestsSMA10,chocolatestsSMA20)
+plot(total, plot.type="single", col = 1:ncol(total), lwd = c(2, 2, 2,2))
+legend("bottomright", colnames(total), col=1:ncol(total), lty = c(1, 1, 1,1), cex=.5, y.intersp = 1)
+
+#R CODES 2: SINGLE EXPONENTIAL SMOOTHING
+chocolatestses =  ts(chocolates[,2], frequency=12, start=c(1,1))
+chocolatestses =  ts(chocolates[,2], frequency=4, start=c(3,1))
+chocolatestssesa01 =  HoltWinters(chocolatests,alpha=0.1, beta=FALSE, gamma=FALSE)
+chocolatestssesa02 =  HoltWinters(chocolatests,alpha=0.2, beta=FALSE, gamma=FALSE)
+chocolatestssesa09 =  HoltWinters(chocolatests,alpha=0.9, beta=FALSE, gamma=FALSE)
+total = cbind(chocolatests,chocolatestssesa01$fitted[,1],chocolatestssesa02$fitted[,1],chocolatestssesa09$fitted[,1])
+plot(total, plot.type="single", col = 1:ncol(total), lwd = c(2, 2, 2,2))
+legend("bottomright", c("Original","0.1","0.2","0.9"), col=1:ncol(total), lty = c(1, 1), cex=.5, y.intersp = 1)
+chocolatestsesforecast01 = forecast.HoltWinters(chocolatestssesa01, h = 12)
+chocolatestsesforecast02 = forecast.HoltWinters(chocolatestssesa02, h = 12)
+chocolatestsesforecast09 = forecast.HoltWinters(chocolatestssesa09, h = 12)
+plot.forecast(chocolatestsesforecast01)
+plot.forecast(chocolatestsesforecast02)
+plot.forecast(chocolatestsesforecast09)
+chocolatestsesforecast01
+chocolatestsesforecast02
+chocolatestsesforecast09
+
+#R CODES 3: 
+chocolatestscomponents <- decompose(chocolatests)
+chocolatestscomponents
+plot(chocolatestscomponents)
+
+
+#R CODES 3: ALTERNATIVE SOLUTION
+plot(chocolatests)
+chocolatests
+chocolatesfit <- tslm(chocolatests ~ trend + season, data = chocolatests)
+summary(chocolatesfit)
+plot(forecast.lm(chocolatesfit))
+plot(forecast(chocolatesfit, h=20))
+
+?stl
+
+################################
+data(AirPassengers)
+#This tells you that the data series is in a time series format
+class(AirPassengers)
+
+start(AirPassengers)
+end(AirPassengers)
+
+#The cycle of this time series is 12months in a year
+frequency(AirPassengers)
+
+#The number of passengers are distributed across the spectrum
+summary(AirPassengers)
+
+#Plot the Data
+plot(AirPassengers)
+
+# This will fit in a line
+abline(reg=lm(AirPassengers~time(AirPassengers)))
+
+#Other Operations
+#This will print the cycle across years.
+cycle(AirPassengers)
+
+#This will aggregate the cycles and display a year on year trend
+plot(aggregate(AirPassengers,FUN=mean))
+
+#Box plot across months will give us a sense on seasonal effect
+boxplot(AirPassengers~cycle(AirPassengers))
+
+
+#######################################
+#TIME SERIES MINING
+#Time Series Clustering
+#Dynamic Time Warping Example
+#Set index for perfect example to create sine waves
+idx <- seq(0, 2*pi, len=100)
+
+#Here the perfect sine waves are added with variation
+aa <- sin(idx) + runif(100)/10
+bb <- cos(idx)
+align <- dtw(aa, bb, step = asymmetricP1, keep = T)
+plot(align)
+dtwPlotTwoWay(align)
+plot(align,type="twoway")
+
+runif(100)/10
+plot(sin(idx))
+plot(aa)
+plot(bb)
+
+dev.off()
+?dtw
+plot(idx)
+plot(aa)
+plot(bb)
+nrow(sc)
+
+#DTW Example Synthetic Control Charts
+#Read Data into R
+sc <- read.table("synthetic_control.data", header=F, sep="")
+sc
+View(sc)
+
+#Show one sample from each class
+idx <- c(1,101,201,301,401,501)
+sample1 <- t(sc[idx,])
+sc[2,3]
+sc
+sample1
+#Plotting the sampled time series, you can change the time series selected
+plot.ts(sample1, main="")
+plot.ts(sample1)
+
+#Randomly Sample n Cases from Each Class, to make it easy for plotting
+#Here, we choose only 10 time series data from each classes
+n <- 10
+s <- sample(1:100, n)
+s
+idx <- c(s, 100+s, 200+s, 300+s, 400+s, 500+s)
+sample2 <- sc[idx,]
+sample2
+observedLabels <- c(rep(1,n), rep(2,n), rep(3,n), rep(4,n), rep(5,n), rep(6,n))
+observedLabels
+
+#Compute DTW Distances
+library(dtw)
+#dist function will compute for the distance matrix
+distanceMatrix <- dist(sample2, method="DTW")
+distanceMatrix
+
+#Hierarchical Clustering using DTW
+hc <- hclust(distanceMatrix, method="average")
+plot(hc, labels=observedLabels, main="")
+hc
+
+#TIME SERIES CLASSIFICATION
+#Extracting DWT coefficients (with Haar filter)
+library(wavelets)
+??wavelets
+wtData <- NULL
+for (i in 1:nrow(sc)) {
+  a <- t(sc[i,])
+  wt <- dwt(a, filter="haar", boundary="periodic")
+  wtData <- rbind(wtData, unlist(c(wt@W,wt@V[[wt@level]])))
+}
+wtData
+wtData <- as.data.frame(wtData)
+wtData
+
+# set class labels into categorical values
+classId <- c(rep("1",100), rep("2",100), rep("3",100),rep("4",100), rep("5",100), rep("6",100))
+classId
+wtSc <- data.frame(cbind(classId, wtData))
+wtSc
+View(wtSc)
+
+
+#Build a Decision Tree with ctree() in package party
+library(party)
+ct <- ctree(classId ~ ., data=wtSc)
+ct
+
+J48M <- J48(classId ~ ., data=wtSc)
+pClassId <- predict(J48M)
+pClassId <- predict(ct)
+pClassId
+?dwt
+
+#Check predicted classes against original class labels
+table(classId, pClassId)
+
+
+#Accuracy
+(sum(classId==pClassId)) / nrow(wtSc)
+
+#Plot
+plot(ct, cex=0.5)
+?plot
+plot(J48M, ip_args=list(pval=FALSE), ep_args=list(digits=0))
+?cex
+
+
+
+#For Time Series Classification
+#Extracting DWT coefficients (with Haar filter)
+library(wavelets)
+wtData <- NULL
+for (i in 1:nrow(sc)) {
+      a <- t(sc[i,])
+      wt <- dwt(a, filter="haar", boundary="periodic")
+      wtData <- rbind(wtData, unlist(c(wt@W,wt@V[[wt@level]])))
+      }
+wtData <- as.data.frame(wtData)
+wtData
+
+# set class labels into categorical values
+classId <- c(rep("1",100), rep("2",100), rep("3",100),
+                rep("4",100), rep("5",100), rep("6",100))
+wtSc <- data.frame(cbind(classId, wtData))
+wtSc
+
+# build a decision tree with ctree() in package party
+library(party)
+ct <- ctree(classId ~ ., data=wtSc,
+              controls = ctree_control(minsplit=30, minbucket=10, maxdepth=5))
+pClassId <- predict(ct)
+
+# check predicted classes against original class labels
+table(classId, pClassId)
+
+# accuracy
+(sum(classId==pClassId)) / nrow(wtSc)
+
+#Plot Tree
+plot(ct, ip_args=list(pval=FALSE), ep_args=list(digits=0))
+
+?dtw
+
+
+
+
+
+#######################################
+#ARIMA
+#For DIFFERENCING
+plot(diff(log(a10),12), xlab="Year", ylab="Annual change in monthly log A10 sales")
+plot(a10)
+
+
+
+##################################################################
+
+library('ggplot2')
+library('forecast')
+library('tseries')
+
+daily_data = read.csv('day.csv', header=TRUE, stringsAsFactors=FALSE)
+
+#Examine Data
+daily_data$Date = as.Date(daily_data$dteday)
+daily_data$Date
+ggplot(daily_data, aes(Date, cnt)) + geom_line() + scale_x_date('month')  + ylab("Daily Bike Checkouts") + xlab("")
+
+
+#example
+acf()
+
+#auto.Arima() and Arima()
+usconsumption <- Arima(usconsumption[,1], order=c(0,0,3))
+usconsumption
+
+#Tse stl toget the regression model
+eeadj <- seasadj(stl(elecequip, s.window="periodic"))
+eeadj
+plot(eeadj)
+
+#Take the difference
+diff
+diff(eeadj, lag=1)
+
+tsdisplay(diff(eeadj),main="")
+
+#Fitting or identifying a model
+fit300 <- Arima(eeadj, order=c(3,0,0))
+fit410 <- Arima(eeadj, order=c(4,1,0))
+fit210 <- Arima(eeadj, order=c(2,1,0))
+fit311 <- Arima(eeadj, order=c(3,1,1))
+summary(fit300)
+summary(fit410)
+summary(fit210)
+summary(fit311)
+                 
+
+#ACF
+residuals(fit311)
+plot(residuals(fit311))
+Acf(residuals(fit311))
+
+
+Box.test(residuals(fit), lag=24, fitdf=4, type="Ljung")
+
+#Forecast using chosen ARIMA Model
+plot(forecast(fit311))
+forecastvalues <- forecast(fit311)
+forecastvalues
+
+#Using auto.arima
+auto.arima(eeadj)
+
+
+##############################################################
+#OTHER NOTES
+#Time Series Decomposition
+AirPassengers
+plot(AirPassengers)
+
+apts <- ts(AirPassengers, frequency = 12)
+f <- decompose(apts)
+f$figure
+f$seasonal
+f$trend
+f$random
+f$type
+
+#Seasonal Figures same with $Seasonal
+plot(f$figure, type="b")
+
+#Plot
+plot(f)
+
+#To Build an ARIMA Model
+fit <- arima(AirPassengers, order = c(1,0,0), list(order = c(2,1,0), period = 12))
+fit
+
+#To Predict using the model
+fore <- predict(fit, n.ahead = 24)
+fore
+
+#Error bounds at 95% confidence interval
+
+U <- fore$pred + 2*fore$se
+L <- fore$pred - 2*fore$se
+U
+L
+
+
+#To Plot TS
+ts.plot(AirPassengers, fore$pred, U, L, col = c(1,2,4,4), lty = c(1,1,2,2))
+?ts.plot
+
+legend("topleft", col=c(1,2,4), lty=c(1,1,2), c("Actual","Forecast", "Error bounds (95% Confidence)"))
+
+
+#DTW
+library('dtw')
+idx <- seq(0, 2*pi, len=100)
+aa <- sin(idx) + runif(100)/10
+bb <- cos(idx)
+align <- dtw(aa, bb, step = asymmetricP1, keep = T)
+dtwPlotTwoWay(align)
+
+plot(aa)
+plot(bb)
