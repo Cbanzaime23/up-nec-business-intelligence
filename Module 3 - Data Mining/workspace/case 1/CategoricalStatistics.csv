@@ -1,0 +1,8 @@
+"","      id","     age","    sex","       region","    income","married","   children"," car","save_act","current_act","mortgage"," pep"
+"","ID12101:  1  ","Min.   :18  ","FEMALE:300  ","INNER_CITY:269  ","Min.   : 5014  ","NO :204  ","Min.   :0.00  ","NO :304  ","NO :186  ","NO :145  ","NO :391  ","NO :326  "
+"","ID12102:  1  ","1st Qu.:30  ","MALE  :300  ","RURAL     : 96  ","1st Qu.:17264  ","YES:396  ","1st Qu.:0.00  ","YES:296  ","YES:414  ","YES:455  ","YES:209  ","YES:274  "
+"","ID12103:  1  ","Median :42  ",NA,"SUBURBAN  : 62  ","Median :24925  ",NA,"Median :1.00  ",NA,NA,NA,NA,NA
+"","ID12104:  1  ","Mean   :42  ",NA,"TOWN      :173  ","Mean   :27524  ",NA,"Mean   :1.01  ",NA,NA,NA,NA,NA
+"","ID12105:  1  ","3rd Qu.:55  ",NA,NA,"3rd Qu.:36173  ",NA,"3rd Qu.:2.00  ",NA,NA,NA,NA,NA
+"","ID12106:  1  ","Max.   :67  ",NA,NA,"Max.   :63130  ",NA,"Max.   :3.00  ",NA,NA,NA,NA,NA
+"","(Other):594  ",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
